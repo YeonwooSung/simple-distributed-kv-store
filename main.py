@@ -50,7 +50,7 @@ my_settings = Settings()
 conf = Config(my_settings.CONFIG_PATH)
 ZK_PATH = "/myzk/cache/redis/scrap"
 
-RECONNECT_INTERVAL = 300 # 5 minutes
+HEALTH_CHECK_INTERVAL = 300 # 5 minutes
 
 
 init_log(app, conf.section("log")["path"])
@@ -179,19 +179,12 @@ async def demo(request: Request):
     return templates.TemplateResponse('demo.html', context={'request': request, 'results': results})
 
 
-@repeat_every(seconds=RECONNECT_INTERVAL)
-async def ping_and_reconnect():
+@repeat_every(seconds=HEALTH_CHECK_INTERVAL)
+async def health_check():
     global g_ch
     for k,i,v,h,nick in g_ch.continuum:
         try:
-            v.get_conn().ping()
+            v.get_conn().ping()  # ping to redis server
         except Exception as e:
             print(str(e))
-            print("Failover: ", nick)
-
-            try:
-                v.reconnect()
-                print("Reconnected: ", nick)
-            except Exception as e:
-                print(str(e))
-                print("Reconnect Fail: ", nick)
+            print("Unhealthy node detected: ", nick)
