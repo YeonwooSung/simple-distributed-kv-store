@@ -56,7 +56,15 @@ HEALTH_CHECK_INTERVAL = 300 # 5 minutes
 init_log(app, conf.section("log")["path"])
 init_cors(app)
 init_instrumentator(app)
-zk = init_kazoo(conf.section("zookeeper")["hosts"], ZK_PATH, refresh_shard_range)
+
+# use zookeeper for both failover and shard range
+# When the list of redis nodes changes (i.e. a node is added or removed, or the admin removed unhealthy nodes),
+# the list of nodes is updated in the cache
+zk = init_kazoo(
+    conf.section("zookeeper")["hosts"],
+    ZK_PATH,
+    refresh_shard_range
+)
 
 templates = Jinja2Templates(directory="templates/")
 
