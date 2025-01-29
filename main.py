@@ -7,8 +7,6 @@ from datetime import datetime
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-import logging
-import json_logging
 import urllib.parse
 import httpx
 import sys
