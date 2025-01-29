@@ -27,7 +27,6 @@ from redis_conn import RedisConnection
 
 
 def refresh_shard_range(nodes):
-    connections = {}
     if not nodes or len(nodes) == 0:
         print("There is no redis nodes")
         return
@@ -52,7 +51,7 @@ def refresh_shard_range(nodes):
 app = FastAPI()
 my_settings = Settings()
 conf = Config(my_settings.CONFIG_PATH)
-ZK_PATH = "/the_red/cache/redis/scrap"
+ZK_PATH = "/myzk/cache/redis/scrap"
 
 
 init_log(app, conf.section("log")["path"])

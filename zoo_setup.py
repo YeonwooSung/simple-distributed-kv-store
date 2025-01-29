@@ -2,7 +2,7 @@ from kazoo.client import KazooClient
 from kazoo.exceptions import NoNodeError
 from kazoo.exceptions import NodeExistsError
 
-ZK_DATA_PATH = "/the_red/cache/redis/scrap"
+ZK_DATA_PATH = "/myzk/cache/redis/scrap"
 ZK_HOSTS = "127.0.0.1:2181"
 zk = KazooClient(hosts=ZK_HOSTS)
 
