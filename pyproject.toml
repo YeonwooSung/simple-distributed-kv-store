@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "simple-distributed-kv-store"
+version = "0.1.0"
+description = ""
+authors = ["YeonwooSung <neos960518@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+redis = "^5.2.1"
+kazoo = "^2.10.0"
+pydantic = "^2.10.6"
+fastapi = "^0.115.7"
+uvicorn = "^0.34.0"
+bs4 = "^0.0.2"
+httpx = "^0.28.1"
+prometheus-fastapi-instrumentator = "^7.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
