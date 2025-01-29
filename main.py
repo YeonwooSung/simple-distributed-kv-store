@@ -1,16 +1,13 @@
-from typing import Optional
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from bs4 import BeautifulSoup
-from datetime import datetime
-from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi_utilities import repeat_every
 
 import urllib.parse
 import httpx
 import sys
-import json
+import orjson
 import traceback
 
 from exceptions import UnicornException
@@ -52,6 +49,8 @@ app = FastAPI()
 my_settings = Settings()
 conf = Config(my_settings.CONFIG_PATH)
 ZK_PATH = "/myzk/cache/redis/scrap"
+
+RECONNECT_INTERVAL = 300 # 5 minutes
 
 
 init_log(app, conf.section("log")["path"])
@@ -115,7 +114,8 @@ def store_to_cache(url: str, value: str):
     if not conn:
         return None
 
-    conn.set(key, json.dumps(value))
+    dump_value = orjson.dumps(value).decode('utf-8')
+    conn.set(key, dump_value)
 
 
 def get_from_cache(url: str):
@@ -129,7 +129,7 @@ def get_from_cache(url: str):
     try:
         value = conn.get(key)
         if value:
-            return json.loads(value.decode('utf-8'))
+            return orjson.loads(value.decode('utf-8'))
         else:
             return None
     except Exception as e:
@@ -174,5 +174,24 @@ async def demo(request: Request):
             results.append((nick, h, keys))
         except Exception as e:
             results.append((nick, h, []))
+            print(str(e))
 
     return templates.TemplateResponse('demo.html', context={'request': request, 'results': results})
+
+
+@repeat_every(seconds=RECONNECT_INTERVAL)
+async def ping_and_reconnect():
+    global g_ch
+    for k,i,v,h,nick in g_ch.continuum:
+        try:
+            v.get_conn().ping()
+        except Exception as e:
+            print(str(e))
+            print("Failover: ", nick)
+
+            try:
+                v.reconnect()
+                print("Reconnected: ", nick)
+            except Exception as e:
+                print(str(e))
+                print("Reconnect Fail: ", nick)
