@@ -1,6 +1,7 @@
 import sys
 import hashlib
 import struct
+import bisect
 
 
 VALUE_IDX = 2
@@ -10,7 +11,7 @@ FIRST = 0
 
 
 class ConsistentHash:
-    def __init__(self, kvlist, replica, hash_func = None):
+    def __init__(self, kvlist, replica, hash_func=None):
         self.hash_func = hash_func
         if not self.hash_func:
             self.hash_func = self.ketama_hash
@@ -28,7 +29,7 @@ class ConsistentHash:
 
     def rebuild(self, kvlist):
         continuum = [
-            (k, i, v, self._hash("%s:%s"%(nick,i)), "%s:%s"%(nick, i))
+            (k, i, v, self._hash("%s:%s" % (nick, i)), "%s:%s" % (nick, i))
             for k, nick, v in kvlist for i in range(self.replica)
         ]
 
@@ -40,23 +41,14 @@ class ConsistentHash:
         return self.hash_func(key)
 
 
-    def find_near_value(self, continnum, h):
-        size = len(continnum)
-        begin = left = 0
-        end = right = size
+    def find_near_value(self, continuum, h):
+        hashes = [item[HASH_IDX] for item in continuum]
+        # use binary search to find the first item that is greater than h
+        idx = bisect.bisect_left(hashes, h)
+        if idx == len(hashes):
+            idx = 0
+        return idx, continuum[idx][VALUE_IDX]
 
-        while left < right:
-            middle = left + int((right - left) / 2)
-            if continnum[middle][HASH_IDX] < h:
-                left = middle + 1
-            else:
-                right = middle
-
-        if right == end:
-            right = begin
-
-        return right, continnum[right][VALUE_IDX]
-        
 
     def get(self, key):
         h = self._hash(key)
@@ -64,8 +56,8 @@ class ConsistentHash:
             return 0, self.continuum[FIRST][VALUE_IDX]
 
         return self.find_near_value(self.continuum, h)
-      
-      
+
+
 if __name__ == "__main__":
     replica = 2
     kvlist = [
